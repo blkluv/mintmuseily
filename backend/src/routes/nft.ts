@@ -1,8 +1,8 @@
 import { Router } from 'express'
-import { generateSongAndMintNFT } from '../controllers/nftController'
+import { generateAndMintNFT } from '../controllers/nftController'
 
 const router = Router()
 
-router.post('/generate', generateSongAndMintNFT)
+router.post('/mint', generateAndMintNFT)
 
 export default router
