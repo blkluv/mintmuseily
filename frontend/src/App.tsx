@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import AuthPage from './pages/AuthPage'
+import AuthPage from './pages/Authpage'
 import Onboarding from './pages/Onboarding'
 import Dashboard from './pages/Dashboard'
 
