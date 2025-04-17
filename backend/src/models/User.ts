@@ -1,19 +1,28 @@
-import mongoose, { Document, Schema } from 'mongoose'
+import mongoose from 'mongoose'
 
-export interface IUser extends Document {
-  email?: string
-  password?: string
-  walletAddress?: string
-  plan: 'free' | 'monthly' | 'yearly'
-  credits: number
-}
-
-const UserSchema: Schema = new Schema({
+const userSchema = new mongoose.Schema({
+  walletAddress: { type: String, unique: true },
   email: { type: String, unique: true, sparse: true },
-  password: { type: String },
-  walletAddress: { type: String, unique: true, sparse: true },
-  plan: { type: String, enum: ['free', 'monthly', 'yearly'], default: 'free' },
-  credits: { type: Number, default: 25 } // Free users get 25 weekly credits by default
-})
+  credits: { type: Number, default: 25 },
+  role: { type: String, enum: ['free', 'monthly', 'yearly'], default: 'free' }
+}, { timestamps: true })
 
-export default mongoose.model<IUser>('User', UserSchema)
+export const User = mongoose.model('User', userSchema)
+export interface UserDocument extends mongoose.Document {
+  walletAddress: string
+  email: string
+  credits: number
+  role: 'free' | 'monthly' | 'yearly'
+  createdAt: Date
+  updatedAt: Date
+}
+export interface UserModel extends mongoose.Model<UserDocument> {
+  findByWalletAddress(walletAddress: string): Promise<UserDocument | null>
+  findByEmail(email: string): Promise<UserDocument | null>
+  findById(id: string): mongoose.Query<UserDocument | null, UserDocument>
+  deductCredits(userId: string, credits: number): Promise<UserDocument | null>
+  addCredits(userId: string, credits: number): Promise<UserDocument | null>
+  updateRole(userId: string, role: 'free' | 'monthly' | 'yearly'): Promise<UserDocument | null>
+  getCredits(userId: string): Promise<number | null>
+  getRole(userId: string): Promise<'free' | 'monthly' | 'yearly' | null>
+  getUserById(userId: string): Promise<UserDocument | null>}

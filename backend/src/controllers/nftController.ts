@@ -20,8 +20,18 @@ export const generateAndMintNFT = async (req: Request, res: Response) => {
     // Step 2: Upload to IPFS
     const ipfsCid = await uploadToIPFS(outputPath, outputName)
     const audioUrl = `https://ipfs.io/ipfs/${ipfsCid}`
+    
+// Step 3: Mint NFT using ethers
+import ABI from '../../contracts/abi/MintMuseilyNFT.json'
+import { Contract, Wallet, JsonRpcProvider } from 'ethers'
 
-    // TODO: Mint NFT with ethers.js here
+// These should come from .env
+const provider = new JsonRpcProvider(process.env.RPC_URL!)
+const wallet = new Wallet(process.env.PRIVATE_KEY!, provider)
+const contract = new Contract(process.env.CONTRACT_ADDRESS!, ABI.abi, wallet)
+
+const mintTx = await contract.mint(walletAddress, audioUrl)
+await mintTx.wait()
 
     fs.unlinkSync(outputPath) // Cleanup
     return res.status(200).json({ success: true, audioUrl, ipfsCid })
