@@ -7,8 +7,8 @@ import { uploadToIPFS } from '../utils/ipfs'
 export const generateAndMintNFT = async (req: Request, res: Response) => {
   const { prompt, walletAddress, length } = req.body
   if (
-    typeof prompt !== 'string' || 
-    typeof walletAddress !== 'string' || 
+    typeof prompt !== 'string' || Array.isArray(prompt) || 
+    typeof walletAddress !== 'string' || Array.isArray(walletAddress) || 
     typeof length !== 'number'
   ) {
     return res.status(400).json({ error: 'Invalid input types. "prompt" and "walletAddress" must be strings, and "length" must be a number.' })
