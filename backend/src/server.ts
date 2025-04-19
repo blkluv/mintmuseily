@@ -2,6 +2,8 @@ import express from 'express'
 import cors from 'cors'
 import nftRoutes from './routes/nft'
 import mongoose from 'mongoose'
+import dotenv from 'dotenv'
+dotenv.config()
 
 mongoose.connect(process.env.MONGO_URI!)
   .then(() => console.log('✅ MongoDB connected'))
