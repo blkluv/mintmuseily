@@ -1,59 +1,66 @@
-import { Request, Response } from 'express'
-import bcrypt from 'bcrypt'
-import jwt from 'jsonwebtoken'
-import User from '../models/User'
+import { Request, Response } from 'express';
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import vault from 'node-vault';
+import User from '../models/User';
 
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) {
-    throw new Error('JWT_SECRET environment variable is not defined');
-}
+// Initialize Vault client
+const vaultClient = vault({
+  endpoint: 'http://127.0.0.1:8200', // Replace with your Vault server address
+  token: 'your-root-token',         // Use a secure method to handle the token
+});
+
+// Function to get secrets from Vault
+const getJWTSecret = async (): Promise<string> => {
+  try {
+    const secret = await vaultClient.read('secrets/mintmuseily');
+    return secret.data.JWT_SECRET;
+  } catch (error) {
+    console.error('Error fetching JWT_SECRET from Vault:', error);
+    throw new Error('Failed to retrieve JWT_SECRET');
+  }
+};
 
 export const signup = async (req: Request, res: Response) => {
   try {
-    const { email, password } = req.body
-    const hashedPassword = await bcrypt.hash(password, 10)
-    const user = await User.create({ email, password: hashedPassword, plan: 'free', credits: 25 })
-    res.status(201).json({ user, token: jwt.sign({ id: user._id }, JWT_SECRET) })
+    const { email, password } = req.body;
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const user = await User.create({
+      email,
+      password: hashedPassword,
+      plan: 'free',
+      credits: 25,
+    });
+
+    const JWT_SECRET = await getJWTSecret(); // Fetch secret from Vault
+
+    res.status(201).json({
+      user,
+      token: jwt.sign({ id: user._id }, JWT_SECRET),
+    });
   } catch (error) {
-    res.status(400).json({ error: 'Signup failed' })
+    res.status(400).json({ error: 'Signup failed' });
   }
-}
+};
 
 export const login = async (req: Request, res: Response) => {
   try {
-    const { email, password } = req.body
-    const user = await User.findOne({ email })
-    if (!user) return res.status(404).json({ error: 'User not found' })
-    const isMatch = await bcrypt.compare(password, user.password as string)
-    if (!isMatch) return res.status(401).json({ error: 'Invalid credentials' })
-    res.status(200).json({ user, token: jwt.sign({ id: user._id }, JWT_SECRET) })
-  } catch (error) {
-    res.status(400).json({ error: 'Login failed' })
-  }
-}
+    const { email, password } = req.body;
 
-export const walletLogin = async (req: Request, res: Response) => {
-  try {
-    const { address, signature, message } = req.body
-    // Ideally, verify the signature here; for now, we assume it is valid.
-    let user = await User.findOne({ walletAddress: address })
-    if (!user) {
-      user = await User.create({ walletAddress: address, plan: 'free', credits: 25 })
-    }
-    res.status(200).json({ user, token: jwt.sign({ id: user._id }, JWT_SECRET) })
-  } catch (error) {
-    res.status(400).json({ error: 'Wallet login failed' })
-  }
-}
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ error: 'User not found' });
 
-// Add a getMe handler to allow fetching the user's profile.
-// In a production app, you would verify the JWT token and then return user data.
-export const getMe = async (req: Request, res: Response) => {
-  try {
-    // For now, just a stub response.
-    // You might extract user ID from req.user (after middleware authentication) in a complete solution.
-    res.status(200).json({ message: 'User profile', user: {} })
+    const isMatch = await bcrypt.compare(password, user.password as string);
+    if (!isMatch) return res.status(401).json({ error: 'Invalid credentials' });
+
+    const JWT_SECRET = await getJWTSecret(); // Fetch secret from Vault
+
+    res.status(200).json({
+      user,
+      token: jwt.sign({ id: user._id }, JWT_SECRET),
+    });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to retrieve user profile' })
+    res.status(400).json({ error: 'Login failed' });
   }
-}
+};
