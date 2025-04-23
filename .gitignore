@@ -43,4 +43,4 @@ next-env.d.ts
 #forge (smart contract system)
 /.forge/
 /mintmuseily/forge
-/mintmuseily-contracts
+

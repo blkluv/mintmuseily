@@ -2,12 +2,20 @@
 import '@rainbow-me/rainbowkit/styles.css'
 import { getDefaultWallets, RainbowKitProvider } from '@rainbow-me/rainbowkit'
 import { configureChains, createConfig, WagmiConfig } from 'wagmi'
-import { mainnet, sepolia } from 'wagmi/chains'
-import { publicProvider } from 'wagmi/providers/public'
+import { sepolia } from 'wagmi/chains'
+import { jsonRpcProvider } from '@wagmi/core/providers/jsonRpc'
+import { publicClient } from 'viem'
 
-const { chains, publicClient } = configureChains(
+// Define your RPC URL
+const SEPOLIA_RPC = process.env.NEXT_PUBLIC_RPC_URL!
+
+const { chains, publicClient: wagmiPublicClient } = configureChains(
   [sepolia],
-  [publicProvider()]
+  [
+    jsonRpcProvider({
+      rpc: () => ({ http: SEPOLIA_RPC }),
+    })
+  ]
 )
 
 const { connectors } = getDefaultWallets({
@@ -19,7 +27,7 @@ const { connectors } = getDefaultWallets({
 const wagmiConfig = createConfig({
   autoConnect: true,
   connectors,
-  publicClient
+  publicClient: wagmiPublicClient,
 })
 
 export function Web3Provider({ children }: { children: React.ReactNode }) {
