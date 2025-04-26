@@ -1,41 +1,28 @@
-'use client'
-import '@rainbow-me/rainbowkit/styles.css'
-import { getDefaultWallets, RainbowKitProvider } from '@rainbow-me/rainbowkit'
-import { configureChains, createConfig, WagmiConfig } from 'wagmi'
-import { sepolia } from 'wagmi/chains'
-import { jsonRpcProvider } from '@wagmi/core/providers/jsonRpc'
-import { publicClient } from 'viem'
+"use client"; // Because wagmi uses hooks
 
-// Define your RPC URL
-const SEPOLIA_RPC = process.env.NEXT_PUBLIC_RPC_URL!
+import { WagmiConfig, createConfig, configureChains } from 'wagmi';
+import { mainnet, polygon, arbitrum } from 'wagmi/chains';
+import { publicProvider } from 'wagmi/providers/public';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-const { chains, publicClient: wagmiPublicClient } = configureChains(
-  [sepolia],
-  [
-    jsonRpcProvider({
-      rpc: () => ({ http: SEPOLIA_RPC }),
-    })
-  ]
-)
+const { chains, publicClient } = configureChains(
+  [mainnet, polygon, arbitrum],
+  [publicProvider()]
+);
 
-const { connectors } = getDefaultWallets({
-  appName: 'MintMuseily',
-  projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID!,
-  chains
-})
-
-const wagmiConfig = createConfig({
+const config = createConfig({
   autoConnect: true,
-  connectors,
-  publicClient: wagmiPublicClient,
-})
+  publicClient,
+});
+
+const queryClient = new QueryClient();
 
 export function Web3Provider({ children }: { children: React.ReactNode }) {
   return (
-    <WagmiConfig config={wagmiConfig}>
-      <RainbowKitProvider chains={chains}>
+    <WagmiConfig config={config}>
+      <QueryClientProvider client={queryClient}>
         {children}
-      </RainbowKitProvider>
+      </QueryClientProvider>
     </WagmiConfig>
-  )
+  );
 }
